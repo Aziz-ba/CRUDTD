@@ -1,85 +1,68 @@
-import React, { useState, useEffect } from 'react';
-import './App.css';
-import MaterialTable from 'material-table'
+import React, { useState, useEffect } from "react";
+import "./App.css";
+import MaterialTable from "material-table";
 
+// Self-contained CRUD: data is persisted in the browser's localStorage,
+// so the app runs with `npm start` and needs no backend.
+const STORAGE_KEY = "crudtd.students";
+
+const SEED = [
+  { name: "Ada Lovelace", email: "ada@esilv.fr", year: "A4", fee: 8500 },
+  { name: "Alan Turing", email: "alan@esilv.fr", year: "A5", fee: 9000 },
+  { name: "Grace Hopper", email: "grace@esilv.fr", year: "A3", fee: 8000 },
+];
+
+function load() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (Array.isArray(saved)) return saved;
+  } catch (e) { /* ignore corrupt storage */ }
+  return SEED.map((s, i) => ({ id: i + 1, ...s }));
+}
 
 function App() {
-  const url = "http://localhost:3000"
-  const [data, setData] = useState([])
-  useEffect(() => {
-    getStudents()
-  }, [])
+  const [data, setData] = useState(load);
 
-  const getStudents = () => {
-    fetch(url).then(resp => resp.json())
-      .then(resp => setData(resp))
-  }
+  // Persist on every change.
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+  }, [data]);
+
+  const nextId = () => (data.length ? Math.max(...data.map((r) => r.id)) + 1 : 1);
+
+  const required = (v) => (v === undefined || v === "" ? "Required" : true);
   const columns = [
-    { title: "Name", field: "name", validate: rowData => rowData.name === undefined || rowData.name === "" ? "Required" : true },
-    {
-      title: "Email", field: "email",
-      validate: rowData => rowData.email === undefined || rowData.email === "" ? "Required" : true
-    },
-    {
-      title: "Year", field: "year",
-      validate: rowData => rowData.year === undefined || rowData.year === "" ? "Required" : true
-    },
-    {
-      title: "Fee", field: 'fee',
-      validate: rowData => rowData.fee === undefined || rowData.fee === "" ? "Required" : true
-    }]
+    { title: "Name", field: "name", validate: (r) => required(r.name) },
+    { title: "Email", field: "email", validate: (r) => required(r.email) },
+    { title: "Year", field: "year", validate: (r) => required(r.year) },
+    { title: "Fee (€)", field: "fee", type: "numeric", validate: (r) => required(r.fee) },
+  ];
+
   return (
     <div className="App">
-      <h1 align="center">React-App</h1>
-      <h4 align='center'>TD CRUD</h4>
+      <h1 align="center">Student Manager</h1>
+      <h4 align="center">React CRUD · data saved in your browser (localStorage)</h4>
       <MaterialTable
         title="Student Details"
         columns={columns}
         data={data}
-        options={{ actionsColumnIndex: -1, addRowPosition: "first" }}
+        options={{ actionsColumnIndex: -1, addRowPosition: "first", search: true }}
         editable={{
-          onRowAdd: (newData) => new Promise((resolve, reject) => {
-            //Backend call
-            fetch(url, {
-              method: "POST",
-              headers: {
-                'Content-type': "application/json"
-              },
-              body: JSON.stringify(newData)
-            }).then(resp => resp.json())
-              .then(resp => {
-                getStudents()
-                resolve()
-              })
-          }),
-          onRowUpdate: (newData, oldData) => new Promise((resolve, reject) => {
-            //Backend call
-            fetch(url + "/" + oldData.id, {
-              method: "PUT",
-              headers: {
-                'Content-type': "application/json"
-              },
-              body: JSON.stringify(newData)
-            }).then(resp => resp.json())
-              .then(resp => {
-                getStudents()
-                resolve()
-              })
-          }),
-          onRowDelete: (oldData) => new Promise((resolve, reject) => {
-            //Backend call
-            fetch(url + "/" + oldData.id, {
-              method: "DELETE",
-              headers: {
-                'Content-type': "application/json"
-              },
-
-            }).then(resp => resp.json())
-              .then(resp => {
-                getStudents()
-                resolve()
-              })
-          })
+          onRowAdd: (newData) =>
+            new Promise((resolve) => {
+              setData((prev) => [{ id: nextId(), ...newData }, ...prev]);
+              resolve();
+            }),
+          onRowUpdate: (newData) =>
+            new Promise((resolve) => {
+              setData((prev) => prev.map((r) => (r.id === newData.id ? newData : r)));
+              resolve();
+            }),
+          onRowDelete: (oldData) =>
+            new Promise((resolve) => {
+              setData((prev) => prev.filter((r) => r.id !== oldData.id));
+              resolve();
+            }),
         }}
       />
     </div>
