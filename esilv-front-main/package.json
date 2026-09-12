@@ -1,0 +1,26 @@
+{
+  "name": "esilv-front",
+  "version": "1.0.0",
+  "private": true,
+  "description": "React CRUD (student manager) with a material-table UI. Runs on localStorage, or a json-server REST backend.",
+  "dependencies": {
+    "@material-ui/core": "^4.12.4",
+    "@material-ui/icons": "^4.11.3",
+    "material-table": "^1.69.3",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-scripts": "5.0.1"
+  },
+  "devDependencies": {
+    "json-server": "^0.17.4"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "server": "json-server --watch db.json --port 5000"
+  },
+  "browserslist": {
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "students": [
+    { "id": 1, "name": "Ada Lovelace", "email": "ada@esilv.fr", "year": "A4", "fee": 8500 },
+    { "id": 2, "name": "Alan Turing", "email": "alan@esilv.fr", "year": "A5", "fee": 9000 },
+    { "id": 3, "name": "Grace Hopper", "email": "grace@esilv.fr", "year": "A3", "fee": 8000 }
+  ]
+}

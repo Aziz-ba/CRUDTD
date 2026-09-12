@@ -1,34 +1,15 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import MaterialTable from "material-table";
+import * as api from "./api";
 
-// Self-contained CRUD: data is persisted in the browser's localStorage,
-// so the app runs with `npm start` and needs no backend.
-const STORAGE_KEY = "crudtd.students";
-
-const SEED = [
-  { name: "Ada Lovelace", email: "ada@esilv.fr", year: "A4", fee: 8500 },
-  { name: "Alan Turing", email: "alan@esilv.fr", year: "A5", fee: 9000 },
-  { name: "Grace Hopper", email: "grace@esilv.fr", year: "A3", fee: 8000 },
-];
-
-function load() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (Array.isArray(saved)) return saved;
-  } catch (e) { /* ignore corrupt storage */ }
-  return SEED.map((s, i) => ({ id: i + 1, ...s }));
-}
-
+// CRUD over student records. Uses a REST backend (json-server) when
+// REACT_APP_API_URL is set, otherwise localStorage — so it runs with zero setup.
 function App() {
-  const [data, setData] = useState(load);
+  const [data, setData] = useState([]);
 
-  // Persist on every change.
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
-  }, [data]);
-
-  const nextId = () => (data.length ? Math.max(...data.map((r) => r.id)) + 1 : 1);
+  const refresh = () => api.list().then(setData);
+  useEffect(() => { refresh(); }, []);
 
   const required = (v) => (v === undefined || v === "" ? "Required" : true);
   const columns = [
@@ -41,28 +22,16 @@ function App() {
   return (
     <div className="App">
       <h1 align="center">Student Manager</h1>
-      <h4 align="center">React CRUD · data saved in your browser (localStorage)</h4>
+      <h4 align="center">React CRUD · backend: {api.backendName}</h4>
       <MaterialTable
         title="Student Details"
         columns={columns}
         data={data}
         options={{ actionsColumnIndex: -1, addRowPosition: "first", search: true }}
         editable={{
-          onRowAdd: (newData) =>
-            new Promise((resolve) => {
-              setData((prev) => [{ id: nextId(), ...newData }, ...prev]);
-              resolve();
-            }),
-          onRowUpdate: (newData) =>
-            new Promise((resolve) => {
-              setData((prev) => prev.map((r) => (r.id === newData.id ? newData : r)));
-              resolve();
-            }),
-          onRowDelete: (oldData) =>
-            new Promise((resolve) => {
-              setData((prev) => prev.filter((r) => r.id !== oldData.id));
-              resolve();
-            }),
+          onRowAdd: (newData) => api.create(newData).then(refresh),
+          onRowUpdate: (newData) => api.update(newData.id, newData).then(refresh),
+          onRowDelete: (oldData) => api.remove(oldData.id).then(refresh),
         }}
       />
     </div>
